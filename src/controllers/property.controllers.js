@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import Buyer from "../models/buyer.models.js";
 import jwt from "jsonwebtoken";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const createProperty = async(req, res) => {
     try {
@@ -15,9 +16,38 @@ const createProperty = async(req, res) => {
         if (existingProperty) {
             return res.status(400).json({ message: 'Property already exists' });
         }
-    
+
+        console.log(req.body);
+
+        const {propertyType} = req.body;
+
+        if(propertyType == 'Property Type'){
+            req.body.propertyType = 'Other';
+        }
+
+        let propertyImagesLocalPaths = [];
+        if (
+            req.files &&
+            Array.isArray(req.files.images) &&
+            req.files.images.length > 0
+        ) {
+            propertyImagesLocalPaths = req.files.images.map(image => image.path);
+        }
+        
+        const propertyImages = await Promise.all(propertyImagesLocalPaths.map(uploadOnCloudinary));
+
+        if(propertyImages.length < 1){
+            throw new ApiError(400, "Property Images not added");
+        }
+
+        req.body.images = propertyImages.map(image => image.secure_url);
+        
+        console.log(req.body);
+
         const property = await Property.create(req.body);
         res.status(201).json(property);
+
+        console.log("Data inserted successfully!");
     } catch (error) {
         res.status(400).json({ message: error.message });
     }

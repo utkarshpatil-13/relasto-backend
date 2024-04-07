@@ -28,7 +28,7 @@ router.route('/register').post(
 router.route('/login').post(loginUser);
 
 // secured Routes
-router.route('/logout').get(logoutUser);
+router.route('/logout').post(logoutUser);
 router.route('/refresh-token').post(refereshAccessToken);
 
 export default router;
